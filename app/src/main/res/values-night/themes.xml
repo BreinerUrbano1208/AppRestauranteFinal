@@ -1,0 +1,20 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Tema oscuro. -->
+    <style name="Base.Theme.AppRestaurante" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#FFB5A0</item>
+        <item name="colorOnPrimary">#5F1500</item>
+        <item name="colorPrimaryContainer">#862A12</item>
+        <item name="colorOnPrimaryContainer">#FFDBD1</item>
+        <item name="colorSecondary">#E7BDB2</item>
+        <item name="colorOnSecondary">#442A22</item>
+        <item name="colorSecondaryContainer">#5D4037</item>
+        <item name="colorOnSecondaryContainer">#FFDBD1</item>
+        <item name="colorSurface">#1A110F</item>
+        <item name="colorOnSurface">#F1DFDA</item>
+        <item name="colorSurfaceVariant">#53433F</item>
+        <item name="colorOnSurfaceVariant">#D8C2BC</item>
+        <item name="colorSurfaceContainer">#271D1B</item>
+        <item name="colorOutline">#A08C87</item>
+        <item name="colorOutlineVariant">#53433F</item>
+    </style>
+</resources>

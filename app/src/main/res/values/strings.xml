@@ -1,0 +1,92 @@
+<resources>
+    <string name="app_name">RestApp</string>
+
+    <!-- Navegación -->
+    <string name="nav_menu">Menú</string>
+    <string name="nav_cart">Carrito</string>
+    <string name="nav_admin">Admin</string>
+
+    <!-- Comunes -->
+    <string name="action_back">Volver</string>
+    <string name="action_refresh">Actualizar menú</string>
+    <string name="action_retry">Reintentar</string>
+    <string name="action_logout">Cerrar sesión de administrador</string>
+    <string name="available">Disponible</string>
+    <string name="unavailable">No disponible</string>
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="category_status">%1$s · %2$s</string>
+
+    <!-- Menú -->
+    <string name="menu_title">RestApp</string>
+    <string name="menu_subtitle">Tu menú, a un toque de distancia</string>
+    <string name="menu_empty">No hay productos disponibles en este momento.</string>
+    <string name="menu_add">Agregar</string>
+    <string name="error_network">No se pudo conectar con el servidor. Revisa tu conexión a internet e inténtalo de nuevo.</string>
+    <string name="error_server">El servidor respondió con un error. Inténtalo de nuevo más tarde.</string>
+    <string name="error_unknown">Ocurrió un error inesperado al cargar el menú.</string>
+
+    <!-- Detalle -->
+    <string name="detail_title">Detalle del producto</string>
+    <string name="detail_loading">Cargando producto…</string>
+    <string name="detail_quantity">Cantidad</string>
+    <string name="detail_add_to_cart">Agregar al carrito · %1$s</string>
+    <string name="detail_unavailable_button">Producto no disponible</string>
+    <string name="cd_decrease">Disminuir cantidad</string>
+    <string name="cd_increase">Aumentar cantidad</string>
+
+    <!-- Carrito -->
+    <string name="cart_title">Carrito</string>
+    <string name="cart_subtitle">Revisa tu pedido antes de confirmar</string>
+    <string name="cart_empty">Tu carrito está vacío.\nVuelve al menú para agregar productos.</string>
+    <string name="cart_total">Total: %1$s</string>
+    <string name="cart_checkout">Enviar pedido</string>
+    <string name="cart_clear">Vaciar carrito</string>
+    <string name="cart_remove">Quitar</string>
+    <string name="cart_unit_price">%1$s c/u</string>
+    <string name="cart_demo_note">El pedido se envía al restaurante para su preparación. No se procesan pagos en la app.</string>
+    <string name="order_title">Resumen del pedido</string>
+    <string name="order_message">%1$s\n\nTOTAL: %2$s\n\nEl pedido se envía al restaurante. El pago se hace directamente en el local.</string>
+    <string name="order_back">Volver</string>
+    <string name="order_finish">Enviar pedido</string>
+
+    <!-- Administrador -->
+    <string name="admin_title">Administrador</string>
+    <string name="admin_subtitle">Gestión del menú</string>
+    <string name="admin_login_info">Esta sección está protegida. Ingresa la clave de administrador para gestionar el menú.</string>
+    <string name="admin_password_hint">Clave de administrador</string>
+    <string name="admin_login_button">Ingresar</string>
+    <string name="admin_login_error">Clave incorrecta</string>
+    <string name="admin_demo_hint">Clave de prueba del servidor: admin123 (cámbiala en el archivo .env)</string>
+    <string name="admin_add_product">Agregar producto</string>
+    <string name="admin_note">Los cambios se guardan en el servidor y los clientes los ven al actualizar el menú.</string>
+    <string name="admin_new_title">Nuevo producto</string>
+    <string name="admin_edit_title">Editar producto</string>
+    <string name="admin_edit">Editar</string>
+    <string name="admin_in_menu">Visible en el menú</string>
+    <string name="field_name">Nombre</string>
+    <string name="field_description">Descripción</string>
+    <string name="field_category">Categoría</string>
+    <string name="field_price">Precio (ej. 18000)</string>
+    <string name="field_image">URL de la imagen (opcional)</string>
+    <string name="error_name_required">Escribe el nombre del producto</string>
+    <string name="error_price_invalid">Escribe un precio válido</string>
+
+    <!-- Mensajes -->
+    <string name="msg_added_to_cart">%1$s agregado al carrito</string>
+    <string name="msg_unavailable">Este producto no está disponible</string>
+    <string name="msg_cart_cleared">Carrito vaciado</string>
+    <string name="msg_order_sent">Pedido #%1$d enviado al restaurante</string>
+    <string name="msg_menu_refresh_failed">No se pudo actualizar el menú. Se muestran los datos anteriores.</string>
+    <string name="msg_product_created">Producto agregado al menú</string>
+    <string name="msg_product_updated">Producto actualizado</string>
+    <string name="msg_availability_on">%1$s ahora aparece en el menú</string>
+    <string name="msg_availability_off">%1$s ya no aparece en el menú</string>
+    <string name="msg_server_error">%1$s</string>
+    <string name="msg_no_connection">No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.</string>
+    <string name="msg_unknown_error">Ocurrió un error inesperado.</string>
+    <string name="msg_session_expired">Tu sesión de administrador venció. Vuelve a ingresar.</string>
+    <string name="admin_login_blocked">Demasiados intentos. Espera unos minutos.</string>
+    <string name="order_name_hint">Tu nombre o número de mesa</string>
+    <string name="order_name_required">Escribe tu nombre o número de mesa</string>
+</resources>

@@ -1,0 +1,22 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Tema claro (Material 3, paleta terracota). -->
+    <style name="Base.Theme.AppRestaurante" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#B7472A</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#FFDBD1</item>
+        <item name="colorOnPrimaryContainer">#3B0900</item>
+        <item name="colorSecondary">#77574E</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#FFDBD1</item>
+        <item name="colorOnSecondaryContainer">#2C150F</item>
+        <item name="colorSurface">#FFF8F6</item>
+        <item name="colorOnSurface">#231917</item>
+        <item name="colorSurfaceVariant">#F5DED8</item>
+        <item name="colorOnSurfaceVariant">#53433F</item>
+        <item name="colorSurfaceContainer">#F8EBE6</item>
+        <item name="colorOutline">#85736E</item>
+        <item name="colorOutlineVariant">#D8C2BC</item>
+    </style>
+
+    <style name="Theme.AppRestaurante" parent="Base.Theme.AppRestaurante" />
+</resources>
