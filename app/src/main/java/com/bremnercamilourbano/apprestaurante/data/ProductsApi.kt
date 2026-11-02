@@ -1,6 +1,6 @@
 package com.bremnercamilourbano.apprestaurante.data
 
-import com.bremnercamilourbano.apprestaurante.BuildConfig
+
 import com.google.gson.GsonBuilder
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -52,7 +52,8 @@ interface ProductsApi {
 
     companion object {
         fun create(): ProductsApi = Retrofit.Builder()
-            .baseUrl("http://192.168.18.10:3000/")
+            /* url para emulador*/ .baseUrl("http://10.0.2.2:3000/")
+            /*url para celular .baseUrl("http://192.168.18.10:3000/")*/
             .addConverterFactory(GsonConverterFactory.create(GsonBuilder().serializeNulls().create()))
             .build()
             .create(ProductsApi::class.java)
