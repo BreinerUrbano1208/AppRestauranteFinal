@@ -2,6 +2,7 @@ package com.bremnercamilourbano.apprestaurante.ui
 
 import android.os.Bundle
 import android.view.View
+import androidx.core.widget.doAfterTextChanged
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -36,6 +37,8 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
         binding.recyclerProducts.adapter = adapter
         binding.btnRefresh.setOnClickListener { viewModel.loadProducts() }
         binding.btnRetry.setOnClickListener { viewModel.loadProducts() }
+        binding.inputSearch.setText(viewModel.menuQuery.value)
+        binding.inputSearch.doAfterTextChanged { viewModel.setMenuQuery(it?.toString().orEmpty()) }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -48,7 +51,9 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
                         binding.progress.isVisible = loading && !hasItems
                         binding.recyclerProducts.isVisible = hasItems
                         binding.layoutError.isVisible = state is LoadState.Error && !hasItems
-                        binding.txtEmpty.isVisible = state is LoadState.Loaded && !hasItems
+                        val searching = viewModel.menuQuery.value.isNotBlank()
+                        binding.txtEmpty.isVisible = state is LoadState.Loaded && !hasItems && !searching
+                        binding.txtNoResults.isVisible = state is LoadState.Loaded && !hasItems && searching
                         if (state is LoadState.Error) {
                             binding.txtError.setText(
                                 when (state.kind) {

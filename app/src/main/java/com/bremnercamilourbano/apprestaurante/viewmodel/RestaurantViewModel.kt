@@ -4,10 +4,15 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bremnercamilourbano.apprestaurante.R
+import com.bremnercamilourbano.apprestaurante.data.OrderItemRequest
+import com.bremnercamilourbano.apprestaurante.data.OrderRepository
+import com.bremnercamilourbano.apprestaurante.data.OrderRequest
 import com.bremnercamilourbano.apprestaurante.data.ProductRepository
+import com.bremnercamilourbano.apprestaurante.data.Session
+import com.bremnercamilourbano.apprestaurante.data.SessionStore
 import com.bremnercamilourbano.apprestaurante.model.CartItem
 import com.bremnercamilourbano.apprestaurante.model.Product
-import com.google.gson.JsonParser
+import com.bremnercamilourbano.apprestaurante.util.matchesQuery
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,17 +39,38 @@ enum class ErrorKind { NETWORK, SERVER, UNKNOWN }
 
 data class UiMessage(@StringRes val res: Int, val args: List<Any> = emptyList())
 
+/** Menú, carrito, envío del pedido, inicio de sesión del personal y gestión de productos. */
 class RestaurantViewModel : ViewModel() {
 
     private val repository = ProductRepository()
+    private val orders = OrderRepository()
     private val serverProducts = MutableStateFlow<List<Product>>(emptyList())
     private var loadJob: Job? = null
 
     val products: StateFlow<List<Product>> = serverProducts.asStateFlow()
 
-    val menu: StateFlow<List<Product>> = serverProducts
-        .map { list -> list.filter { it.available } }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    // ---------- Buscador ----------
+    private val _menuQuery = MutableStateFlow("")
+    val menuQuery: StateFlow<String> = _menuQuery.asStateFlow()
+    fun setMenuQuery(query: String) {
+        _menuQuery.value = query
+    }
+
+    private val _adminQuery = MutableStateFlow("")
+    val adminQuery: StateFlow<String> = _adminQuery.asStateFlow()
+    fun setAdminQuery(query: String) {
+        _adminQuery.value = query
+    }
+
+    /** Menú del cliente: solo productos disponibles que coinciden con la búsqueda. */
+    val menu: StateFlow<List<Product>> = combine(serverProducts, _menuQuery) { list, query ->
+        list.filter { it.available && it.matchesQuery(query) }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Catálogo del administrador (incluye no disponibles) filtrado por la búsqueda. */
+    val adminProducts: StateFlow<List<Product>> = combine(serverProducts, _adminQuery) { list, query ->
+        list.filter { it.matchesQuery(query) }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _loadState = MutableStateFlow<LoadState>(LoadState.Loading)
     val loadState: StateFlow<LoadState> = _loadState.asStateFlow()
@@ -52,12 +78,14 @@ class RestaurantViewModel : ViewModel() {
     private val _messages = MutableSharedFlow<UiMessage>(extraBufferCapacity = 16)
     val messages: SharedFlow<UiMessage> = _messages.asSharedFlow()
 
+    /** Solo el administrador ve el catálogo completo; cocina y clientes usan el menú público. */
+    private fun adminToken(): String? = SessionStore.session.value?.takeIf { it.isAdmin }?.token
 
     fun loadProducts(silent: Boolean = false) {
         if (silent) loadJob?.cancel() else if (loadJob?.isActive == true) return
         loadJob = viewModelScope.launch {
             if (!silent) _loadState.value = LoadState.Loading
-            repository.getMenu(adminToken.value)
+            repository.getMenu(adminToken())
                 .onSuccess { list ->
                     serverProducts.value = list
                     _loadState.value = LoadState.Loaded
@@ -83,6 +111,7 @@ class RestaurantViewModel : ViewModel() {
         }
     }
 
+    // ---------- Carrito ----------
     private val cart = MutableStateFlow<Map<Int, Int>>(emptyMap())
 
     val cartItems: StateFlow<List<CartItem>> = combine(products, cart) { all, quantities ->
@@ -130,24 +159,32 @@ class RestaurantViewModel : ViewModel() {
         post(R.string.msg_cart_cleared)
     }
 
-
+    // ---------- Envío del pedido ----------
     private val _orderBusy = MutableStateFlow(false)
     val orderBusy: StateFlow<Boolean> = _orderBusy.asStateFlow()
 
-    private val _orderPlaced = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    /** Emite el número del pedido recién creado. */
+    private val _orderPlaced = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val orderPlaced: SharedFlow<Int> = _orderPlaced.asSharedFlow()
 
-    val orderPlaced: SharedFlow<Unit> = _orderPlaced.asSharedFlow()
-
-    fun submitOrder(customerName: String, note: String) {
+    fun submitOrder(customerName: String, phone: String, type: String, tableNumber: Int?, note: String) {
         val items = cartItems.value
         if (items.isEmpty() || _orderBusy.value) return
         _orderBusy.value = true
         viewModelScope.launch {
-            repository.createOrder(customerName.trim(), note.trim(), items)
+            val request = OrderRequest(
+                customerName = customerName.trim(),
+                phone = phone.trim(),
+                type = type,
+                tableNumber = tableNumber,
+                note = note.trim(),
+                items = items.map { OrderItemRequest(it.product.id, it.quantity) }
+            )
+            orders.createOrder(request)
                 .onSuccess { order ->
                     cart.value = emptyMap()
                     post(R.string.msg_order_sent, order.id)
-                    _orderPlaced.tryEmit(Unit)
+                    _orderPlaced.tryEmit(order.id)
                 }
                 .onFailure { error ->
                     postError(error)
@@ -158,12 +195,8 @@ class RestaurantViewModel : ViewModel() {
         }
     }
 
-
-    private val adminToken = MutableStateFlow<String?>(null)
-
-    val adminLogged: StateFlow<Boolean> = adminToken
-        .map { it != null }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    // ---------- Sesión del personal ----------
+    val session: StateFlow<Session?> = SessionStore.session
 
     private val _loginBusy = MutableStateFlow(false)
     val loginBusy: StateFlow<Boolean> = _loginBusy.asStateFlow()
@@ -171,19 +204,19 @@ class RestaurantViewModel : ViewModel() {
     private val _loginError = MutableStateFlow<UiMessage?>(null)
     val loginError: StateFlow<UiMessage?> = _loginError.asStateFlow()
 
-    fun loginAdmin(password: String) {
+    fun login(password: String) {
         if (_loginBusy.value) return
         _loginBusy.value = true
         _loginError.value = null
         viewModelScope.launch {
-            repository.login(ADMIN_USER, password)
-                .onSuccess { token ->
-                    adminToken.value = token
+            repository.login(password)
+                .onSuccess { response ->
+                    SessionStore.start(response.token, response.role)
                     loadProducts(silent = true)
                 }
                 .onFailure { error ->
                     _loginError.value = when {
-                        error is HttpException && error.code() == 401 -> UiMessage(R.string.admin_login_error)
+                        error is HttpException && error.code() == 401 -> UiMessage(R.string.staff_login_error)
                         error is HttpException && error.code() == 429 -> UiMessage(R.string.admin_login_blocked)
                         error is IOException -> UiMessage(R.string.msg_no_connection)
                         else -> UiMessage(R.string.msg_unknown_error)
@@ -193,57 +226,79 @@ class RestaurantViewModel : ViewModel() {
         }
     }
 
-    fun logoutAdmin() {
-        adminToken.value = null
+    fun logout() {
+        SessionStore.clear()
         _loginError.value = null
         loadProducts(silent = true)
     }
 
     private fun expireSession() {
-        adminToken.value = null
+        SessionStore.clear()
         post(R.string.msg_session_expired)
         loadProducts(silent = true)
     }
 
+    // ---------- Gestión de productos (administrador) ----------
+    private val _saveBusy = MutableStateFlow(false)
+    val saveBusy: StateFlow<Boolean> = _saveBusy.asStateFlow()
+
+    /** Si [imageBytes] no es null, primero sube la foto y usa la URL que devuelve el servidor. */
     fun saveProduct(
         id: Int?,
         title: String,
         description: String,
         category: String,
         price: Double,
-        imageUrl: String?
+        imageUrl: String?,
+        imageBytes: ByteArray? = null
     ) {
-        val token = adminToken.value ?: return
+        val token = adminToken() ?: return
         viewModelScope.launch {
-            val result = if (id == null) {
-                repository.createProduct(
-                    token,
-                    Product(0, title, description, category, price, imageUrl, available = true)
-                )
-            } else {
-                val current = serverProducts.value.firstOrNull { it.id == id } ?: return@launch
-                repository.updateProduct(
-                    token,
-                    current.copy(
-                        title = title,
-                        description = description,
-                        category = category,
-                        price = price,
-                        imageUrl = imageUrl
-                    )
-                )
-            }
-            result
-                .onSuccess {
-                    post(if (id == null) R.string.msg_product_created else R.string.msg_product_updated)
-                    loadProducts(silent = true)
+            _saveBusy.value = true
+            try {
+                var finalUrl = imageUrl
+                if (imageBytes != null) {
+                    val upload = repository.uploadImage(token, imageBytes)
+                    val failure = upload.exceptionOrNull()
+                    if (failure != null) {
+                        handleAdminFailure(failure)
+                        return@launch
+                    }
+                    finalUrl = upload.getOrNull()
                 }
-                .onFailure { handleAdminFailure(it) }
+
+                val result = if (id == null) {
+                    repository.createProduct(
+                        token,
+                        Product(0, title, description, category, price, finalUrl, available = true)
+                    )
+                } else {
+                    val current = serverProducts.value.firstOrNull { it.id == id } ?: return@launch
+                    repository.updateProduct(
+                        token,
+                        current.copy(
+                            title = title,
+                            description = description,
+                            category = category,
+                            price = price,
+                            imageUrl = finalUrl
+                        )
+                    )
+                }
+                result
+                    .onSuccess {
+                        post(if (id == null) R.string.msg_product_created else R.string.msg_product_updated)
+                        loadProducts(silent = true)
+                    }
+                    .onFailure { handleAdminFailure(it) }
+            } finally {
+                _saveBusy.value = false
+            }
         }
     }
 
     fun toggleAvailability(productId: Int) {
-        val token = adminToken.value ?: return
+        val token = adminToken() ?: return
         val current = serverProducts.value.firstOrNull { it.id == productId } ?: return
         val newValue = !current.available
         viewModelScope.launch {
@@ -266,40 +321,21 @@ class RestaurantViewModel : ViewModel() {
     }
 
     private fun handleAdminFailure(error: Throwable) {
-        if (error.isUnauthorized()) expireSession() else postError(error)
+        when {
+            error.isUnauthorized() -> expireSession()
+            error.isForbidden() -> post(R.string.msg_forbidden)
+            else -> postError(error)
+        }
     }
+
+    /** Para que las pantallas muestren un aviso (Snackbar) sin lógica de red. */
+    fun showMessage(@StringRes res: Int) = post(res)
 
     private fun post(@StringRes res: Int, vararg args: Any) {
         _messages.tryEmit(UiMessage(res, args.toList()))
     }
 
     private fun postError(error: Throwable) {
-        when {
-            error is HttpException -> {
-                val text = error.serverMessage()
-                if (text != null) post(R.string.msg_server_error, text) else post(R.string.error_server)
-            }
-            error is IOException -> post(R.string.msg_no_connection)
-            else -> post(R.string.msg_unknown_error)
-        }
-    }
-
-    private fun Throwable.isUnauthorized() = this is HttpException && code() == 401
-
-    private fun HttpException.serverMessage(): String? = try {
-        response()?.errorBody()?.string()
-            ?.let { JsonParser.parseString(it).asJsonObject.get("error")?.asString }
-    } catch (e: Exception) {
-        null
-    }
-
-    private fun Throwable.toErrorKind(): ErrorKind = when (this) {
-        is IOException -> ErrorKind.NETWORK
-        is HttpException -> ErrorKind.SERVER
-        else -> ErrorKind.UNKNOWN
-    }
-
-    companion object {
-        const val ADMIN_USER = "admin"
+        _messages.tryEmit(error.toUiMessage())
     }
 }

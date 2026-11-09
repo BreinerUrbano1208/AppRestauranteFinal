@@ -12,11 +12,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.bremnercamilourbano.apprestaurante.databinding.ActivityMainBinding
-import com.bremnercamilourbano.apprestaurante.ui.AdminFragment
 import com.bremnercamilourbano.apprestaurante.ui.CartFragment
 import com.bremnercamilourbano.apprestaurante.ui.DetailFragment
 import com.bremnercamilourbano.apprestaurante.ui.MenuFragment
+import com.bremnercamilourbano.apprestaurante.ui.MyOrderFragment
+import com.bremnercamilourbano.apprestaurante.ui.StaffFragment
+import com.bremnercamilourbano.apprestaurante.viewmodel.OrdersViewModel
 import com.bremnercamilourbano.apprestaurante.viewmodel.RestaurantViewModel
+import com.bremnercamilourbano.apprestaurante.viewmodel.UiMessage
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 
@@ -24,6 +27,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: RestaurantViewModel by viewModels()
+    private val ordersViewModel: OrdersViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,15 +64,8 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
-                launch {
-                    viewModel.messages.collect { message ->
-                        Snackbar.make(
-                            binding.main,
-                            getString(message.res, *message.args.toTypedArray()),
-                            Snackbar.LENGTH_SHORT
-                        ).setAnchorView(binding.bottomNav).show()
-                    }
-                }
+                launch { viewModel.messages.collect { showMessage(it) } }
+                launch { ordersViewModel.messages.collect { showMessage(it) } }
             }
         }
     }
@@ -76,7 +73,8 @@ class MainActivity : AppCompatActivity() {
     private fun showTab(itemId: Int) {
         val fragment = when (itemId) {
             R.id.nav_cart -> CartFragment()
-            R.id.nav_admin -> AdminFragment()
+            R.id.nav_my_order -> MyOrderFragment()
+            R.id.nav_staff -> StaffFragment()
             else -> MenuFragment()
         }
         supportFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
@@ -96,5 +94,17 @@ class MainActivity : AppCompatActivity() {
 
     fun goToMenu() {
         binding.bottomNav.selectedItemId = R.id.nav_menu
+    }
+
+    fun goToMyOrder() {
+        binding.bottomNav.selectedItemId = R.id.nav_my_order
+    }
+
+    private fun showMessage(message: UiMessage) {
+        Snackbar.make(
+            binding.main,
+            getString(message.res, *message.args.toTypedArray()),
+            Snackbar.LENGTH_SHORT
+        ).setAnchorView(binding.bottomNav).show()
     }
 }

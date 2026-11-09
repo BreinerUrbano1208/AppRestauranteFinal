@@ -18,7 +18,11 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
 
-        buildConfigField("String", "API_BASE_URL", "\"http://192.168.18.10:3000/\"")
+        // Dirección del servidor (la lee ProductsApi). Cámbiala solo aquí:
+        //   Render (producción): https://server-app-restaurant.onrender.com/
+        //   Emulador + servidor en tu PC: http://10.0.2.2:3000/
+        //   Celular + servidor en tu PC: http://IP_DE_TU_PC:3000/
+        buildConfigField("String", "API_BASE_URL", "\"https://server-app-restaurant.onrender.com/\"")
     }
 
     buildTypes {
@@ -51,6 +55,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp)
     implementation(libs.glide)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)

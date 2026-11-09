@@ -23,15 +23,9 @@ data class ProductRequest(
 data class AvailabilityRequest(val available: Boolean)
 
 data class LoginRequest(val username: String, val password: String)
-data class LoginResponse(val token: String)
+data class LoginResponse(val token: String, val role: String)
 
-data class OrderItemRequest(val productId: Int, val quantity: Int)
-data class OrderRequest(
-    val customerName: String,
-    val note: String,
-    val items: List<OrderItemRequest>
-)
-data class OrderResponse(val id: Int, val total: Double)
+data class UploadResponse(val imageUrl: String)
 
 fun ProductDto.toDomain(): Product? {
     val productId = id ?: return null

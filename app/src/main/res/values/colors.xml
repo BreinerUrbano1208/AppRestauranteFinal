@@ -3,4 +3,8 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="image_placeholder">#FFEADBD5</color>
+    <color name="status_recibido">#FFE08A00</color>
+    <color name="status_en_preparacion">#FF4A8FE7</color>
+    <color name="status_finalizado">#FF3FA34D</color>
+    <color name="status_cancelado">#FFE5484D</color>
 </resources>

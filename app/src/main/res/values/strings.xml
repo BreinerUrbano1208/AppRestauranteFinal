@@ -4,13 +4,14 @@
     <!-- Navegación -->
     <string name="nav_menu">Menú</string>
     <string name="nav_cart">Carrito</string>
-    <string name="nav_admin">Admin</string>
+    <string name="nav_my_order">Mi pedido</string>
+    <string name="nav_staff">Personal</string>
 
     <!-- Comunes -->
     <string name="action_back">Volver</string>
     <string name="action_refresh">Actualizar menú</string>
     <string name="action_retry">Reintentar</string>
-    <string name="action_logout">Cerrar sesión de administrador</string>
+    <string name="action_logout">Cerrar sesión</string>
     <string name="available">Disponible</string>
     <string name="unavailable">No disponible</string>
     <string name="save">Guardar</string>
@@ -46,7 +47,6 @@
     <string name="cart_unit_price">%1$s c/u</string>
     <string name="cart_demo_note">El pedido se envía al restaurante para su preparación. No se procesan pagos en la app.</string>
     <string name="order_title">Resumen del pedido</string>
-    <string name="order_message">%1$s\n\nTOTAL: %2$s\n\nEl pedido se envía al restaurante. El pago se hace directamente en el local.</string>
     <string name="order_back">Volver</string>
     <string name="order_finish">Enviar pedido</string>
 
@@ -57,7 +57,6 @@
     <string name="admin_password_hint">Clave de administrador</string>
     <string name="admin_login_button">Ingresar</string>
     <string name="admin_login_error">Clave incorrecta</string>
-    <string name="admin_demo_hint">Clave de prueba del servidor: admin123 (cámbiala en el archivo .env)</string>
     <string name="admin_add_product">Agregar producto</string>
     <string name="admin_note">Los cambios se guardan en el servidor y los clientes los ven al actualizar el menú.</string>
     <string name="admin_new_title">Nuevo producto</string>
@@ -68,7 +67,6 @@
     <string name="field_description">Descripción</string>
     <string name="field_category">Categoría</string>
     <string name="field_price">Precio (ej. 18000)</string>
-    <string name="field_image">URL de la imagen (opcional)</string>
     <string name="error_name_required">Escribe el nombre del producto</string>
     <string name="error_price_invalid">Escribe un precio válido</string>
 
@@ -85,8 +83,96 @@
     <string name="msg_server_error">%1$s</string>
     <string name="msg_no_connection">No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.</string>
     <string name="msg_unknown_error">Ocurrió un error inesperado.</string>
-    <string name="msg_session_expired">Tu sesión de administrador venció. Vuelve a ingresar.</string>
+    <string name="msg_session_expired">Tu sesión venció. Vuelve a ingresar.</string>
     <string name="admin_login_blocked">Demasiados intentos. Espera unos minutos.</string>
-    <string name="order_name_hint">Tu nombre o número de mesa</string>
-    <string name="order_name_required">Escribe tu nombre o número de mesa</string>
+
+    <!-- Buscador -->
+    <string name="search_hint">Buscar producto</string>
+    <string name="search_clear">Borrar búsqueda</string>
+    <string name="menu_no_results">No hay productos que coincidan con tu búsqueda.</string>
+
+    <!-- Pedido (datos del cliente) -->
+    <string name="order_summary">%1$s\n\nTOTAL: %2$s\nEl pago se hace directamente en el local.</string>
+    <string name="order_field_name">Tu nombre</string>
+    <string name="order_field_phone">Celular</string>
+    <string name="order_field_table">Número de mesa</string>
+    <string name="order_field_note">Observaciones (opcional)</string>
+    <string name="order_type_mesa">En mesa</string>
+    <string name="order_type_recoger">Para recoger</string>
+    <string name="order_error_name">Escribe tu nombre (mínimo 2 letras)</string>
+    <string name="order_error_phone">Escribe un celular válido (7 a 15 números)</string>
+    <string name="order_error_table">Escribe un número de mesa entre 1 y 200</string>
+
+    <!-- Mi pedido -->
+    <string name="myorder_title">Mi pedido</string>
+    <string name="myorder_subtitle">Sigue el estado de tu pedido</string>
+    <string name="myorder_number">Pedido #%1$d</string>
+    <string name="myorder_empty">No tienes un pedido en seguimiento.\nCuando envíes uno lo verás aquí.</string>
+    <string name="myorder_offline">Sin conexión. Se volverá a intentar solo.</string>
+    <string name="myorder_reason">Motivo: %1$s</string>
+    <string name="myorder_new">Hacer otro pedido</string>
+
+    <!-- Estados -->
+    <string name="status_recibido">Recibido</string>
+    <string name="status_en_preparacion">En preparación</string>
+    <string name="status_finalizado">Finalizado</string>
+    <string name="status_cancelado">Cancelado</string>
+    <string name="status_consultando">Consultando…</string>
+    <string name="status_help_recibido">El restaurante recibió tu pedido.</string>
+    <string name="status_help_en_preparacion">Estamos preparando tu pedido.</string>
+    <string name="status_help_finalizado">¡Tu pedido está listo!</string>
+    <string name="status_help_cancelado">Tu pedido fue cancelado.</string>
+    <string name="status_help_consultando">Consultando el estado de tu pedido…</string>
+
+    <!-- Personal -->
+    <string name="staff_title">Personal</string>
+    <string name="staff_subtitle_cocina">Cocina</string>
+    <string name="staff_subtitle_admin">Administrador</string>
+    <string name="staff_login_info">Sección para el personal del restaurante. Ingresa tu clave.</string>
+    <string name="staff_password_hint">Clave</string>
+    <string name="staff_login_error">Clave incorrecta</string>
+    <string name="staff_tab_orders">Pedidos</string>
+    <string name="staff_tab_products">Productos</string>
+    <string name="staff_tab_history">Historial</string>
+
+    <!-- Cocina -->
+    <string name="kitchen_filter_active">Activos</string>
+    <string name="kitchen_filter_received">Recibidos</string>
+    <string name="kitchen_filter_preparing">En preparación</string>
+    <string name="kitchen_table_hint">Filtrar por mesa</string>
+    <string name="kitchen_empty">No hay pedidos activos.</string>
+    <string name="kitchen_start">Empezar a preparar</string>
+    <string name="kitchen_finish">Marcar finalizado</string>
+    <string name="kitchen_cancel">Cancelar</string>
+    <string name="kitchen_cancel_title">Cancelar pedido #%1$d</string>
+    <string name="kitchen_cancel_message">Esta acción no se puede deshacer. Puedes escribir el motivo (opcional).</string>
+    <string name="kitchen_cancel_reason_hint">Motivo (opcional)</string>
+    <string name="kitchen_cancel_confirm">Cancelar pedido</string>
+    <string name="kitchen_cancel_back">Volver</string>
+    <string name="order_item_title">#%1$d · %2$s</string>
+    <string name="order_table">Mesa %1$d</string>
+    <string name="order_pickup">Para recoger</string>
+    <string name="order_meta">%1$s · %2$s · %3$s</string>
+    <string name="order_line">%1$d × %2$s</string>
+    <string name="order_note_label">Observaciones: %1$s</string>
+    <string name="order_total_label">Total: %1$s</string>
+    <string name="msg_order_cancelled">Pedido #%1$d cancelado</string>
+
+    <!-- Historial -->
+    <string name="history_filter_all">Todos</string>
+    <string name="history_filter_done">Finalizados</string>
+    <string name="history_filter_cancelled">Cancelados</string>
+    <string name="history_search_hint">Buscar por nombre o celular</string>
+    <string name="history_dates">Fechas</string>
+    <string name="history_dates_range">%1$s a %2$s</string>
+    <string name="history_dates_clear">Quitar fechas</string>
+    <string name="history_date_picker_title">Elige el rango de fechas</string>
+    <string name="history_empty">No hay pedidos con esos filtros.</string>
+
+    <!-- Fotos de productos -->
+    <string name="admin_pick_image">Elegir foto</string>
+    <string name="admin_change_image">Cambiar foto</string>
+    <string name="msg_image_error">No se pudo leer o reducir la foto. Prueba con otra.</string>
+    <string name="msg_forbidden">No tienes permiso para esa acción.</string>
+    <string name="error_generic_load">No se pudo cargar. Revisa tu conexión.</string>
 </resources>

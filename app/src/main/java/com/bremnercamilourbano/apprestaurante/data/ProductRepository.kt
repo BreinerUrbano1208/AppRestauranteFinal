@@ -1,15 +1,17 @@
 package com.bremnercamilourbano.apprestaurante.data
 
-import com.bremnercamilourbano.apprestaurante.model.CartItem
 import com.bremnercamilourbano.apprestaurante.model.Product
-import kotlinx.coroutines.CancellationException
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class ProductRepository(private val api: ProductsApi = ProductsApi.create()) {
 
     private fun bearer(token: String) = "Bearer $token"
 
-    suspend fun login(username: String, password: String): Result<String> = safeCall {
-        api.login(LoginRequest(username, password)).token
+    /** Inicia sesión: el servidor decide el rol (admin o cocina) según la contraseña. */
+    suspend fun login(password: String): Result<LoginResponse> = safeCall {
+        api.login(LoginRequest(LOGIN_USER, password))
     }
 
     /** Menú público (solo disponibles) o, con token de administrador, el catálogo completo. */
@@ -41,22 +43,15 @@ class ProductRepository(private val api: ProductsApi = ProductsApi.create()) {
         api.deleteProduct(bearer(token), id)
     }
 
-    suspend fun createOrder(customerName: String, note: String, items: List<CartItem>): Result<OrderResponse> =
-        safeCall {
-            api.createOrder(
-                OrderRequest(
-                    customerName = customerName,
-                    note = note,
-                    items = items.map { OrderItemRequest(it.product.id, it.quantity) }
-                )
-            )
-        }
+    /** Sube la foto (ya comprimida, JPEG) y devuelve su URL pública. */
+    suspend fun uploadImage(token: String, jpegBytes: ByteArray): Result<String> = safeCall {
+        val body = jpegBytes.toRequestBody("image/jpeg".toMediaType())
+        val part = MultipartBody.Part.createFormData("image", "foto.jpg", body)
+        api.uploadImage(bearer(token), part).imageUrl
+    }
 
-    private suspend inline fun <T> safeCall(block: () -> T): Result<T> = try {
-        Result.success(block())
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        Result.failure(e)
+    private companion object {
+        // El servidor decide el rol por la contraseña; este nombre se ignora.
+        const val LOGIN_USER = "personal"
     }
 }

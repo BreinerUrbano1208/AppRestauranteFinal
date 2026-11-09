@@ -1,42 +1,43 @@
 package com.bremnercamilourbano.apprestaurante.data
 
-
+import com.bremnercamilourbano.apprestaurante.BuildConfig
 import com.google.gson.GsonBuilder
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.Multipart
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
+import java.util.concurrent.TimeUnit
 
-// API de productos
 interface ProductsApi {
 
-    // Login
+    // ---------- Sesión ----------
     @POST("api/auth/login")
     suspend fun login(@Body body: LoginRequest): LoginResponse
 
-    // Obtener menú
+    // ---------- Productos ----------
     @GET("api/products")
     suspend fun getMenu(): List<ProductDto>
 
-    // Obtener todos los productos (admin)
     @GET("api/admin/products")
     suspend fun getAllProducts(@Header("Authorization") auth: String): List<ProductDto>
 
-    // Obtener producto por ID
     @GET("api/products/{id}")
     suspend fun getProduct(@Path("id") id: Int): ProductDto
 
-    // Agregar producto
     @POST("api/products")
     suspend fun addProduct(@Header("Authorization") auth: String, @Body body: ProductRequest): ProductDto
 
-    // Actualizar producto
     @PUT("api/products/{id}")
     suspend fun updateProduct(
         @Header("Authorization") auth: String,
@@ -44,7 +45,6 @@ interface ProductsApi {
         @Body body: ProductRequest
     ): ProductDto
 
-    // Cambiar disponibilidad
     @PATCH("api/products/{id}")
     suspend fun setAvailability(
         @Header("Authorization") auth: String,
@@ -52,21 +52,72 @@ interface ProductsApi {
         @Body body: AvailabilityRequest
     ): ProductDto
 
-    // Eliminar producto
     @DELETE("api/products/{id}")
     suspend fun deleteProduct(@Header("Authorization") auth: String, @Path("id") id: Int)
 
-    // Crear pedido
-    @POST("api/orders")
-    suspend fun createOrder(@Body body: OrderRequest): OrderResponse
+    // ---------- Imágenes (administrador) ----------
+    @Multipart
+    @POST("api/admin/uploads")
+    suspend fun uploadImage(
+        @Header("Authorization") auth: String,
+        @Part image: MultipartBody.Part
+    ): UploadResponse
 
-    // Instancia de Retrofit
+    // ---------- Pedidos: cliente ----------
+    @POST("api/orders")
+    suspend fun createOrder(@Body body: OrderRequest): OrderCreated
+
+    @GET("api/orders/{id}/status")
+    suspend fun getOrderStatus(@Path("id") id: Int): OrderStatusDto
+
+    // ---------- Pedidos: cocina y administrador ----------
+    @GET("api/orders")
+    suspend fun getActiveOrders(@Header("Authorization") auth: String): List<OrderDto>
+
+    @PATCH("api/orders/{id}/status")
+    suspend fun setOrderStatus(
+        @Header("Authorization") auth: String,
+        @Path("id") id: Int,
+        @Body body: StatusRequest
+    ): OrderDto
+
+    // ---------- Pedidos: solo administrador ----------
+    @POST("api/orders/{id}/cancel")
+    suspend fun cancelOrder(
+        @Header("Authorization") auth: String,
+        @Path("id") id: Int,
+        @Body body: CancelRequest
+    ): OrderDto
+
+    @GET("api/admin/orders/history")
+    suspend fun getHistory(
+        @Header("Authorization") auth: String,
+        @Query("q") query: String?,
+        @Query("status") status: String?,
+        @Query("from") from: String?,
+        @Query("to") to: String?
+    ): List<OrderDto>
+
     companion object {
-        fun create(): ProductsApi = Retrofit.Builder()
-            /* url para emulador*/ .baseUrl("http://10.0.2.2:3000/")
-            /*url para celular .baseUrl("http://192.168.18.10:3000/")*/
-            .addConverterFactory(GsonConverterFactory.create(GsonBuilder().serializeNulls().create()))
-            .build()
-            .create(ProductsApi::class.java)
+        // Render (plan gratis) se duerme sin uso y la primera petición puede tardar ~50 s:
+        // por eso los tiempos de espera son de 60 s.
+        private val client: OkHttpClient by lazy {
+            OkHttpClient.Builder()
+                .connectTimeout(60, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
+                .build()
+        }
+
+        private val instance: ProductsApi by lazy {
+            Retrofit.Builder()
+                .baseUrl(BuildConfig.API_BASE_URL)
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create(GsonBuilder().serializeNulls().create()))
+                .build()
+                .create(ProductsApi::class.java)
+        }
+
+        fun create(): ProductsApi = instance
     }
 }
