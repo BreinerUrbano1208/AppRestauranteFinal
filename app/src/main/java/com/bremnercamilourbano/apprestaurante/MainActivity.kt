@@ -1,6 +1,8 @@
 package com.bremnercamilourbano.apprestaurante
 
+import android.graphics.Color
 import android.os.Bundle
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -31,7 +33,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // La app siempre es oscura: íconos claros en la barra de estado y de navegación.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT)
+        )
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -80,6 +86,7 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
         supportFragmentManager.commit {
             setReorderingAllowed(true)
+            setCustomAnimations(R.anim.fade_in, R.anim.fade_out)
             replace(R.id.fragmentContainer, fragment)
         }
     }
@@ -87,6 +94,7 @@ class MainActivity : AppCompatActivity() {
     fun openDetail(productId: Int) {
         supportFragmentManager.commit {
             setReorderingAllowed(true)
+            setCustomAnimations(R.anim.slide_in_right, R.anim.fade_out, R.anim.fade_in, R.anim.slide_out_right)
             replace(R.id.fragmentContainer, DetailFragment.newInstance(productId))
             addToBackStack(null)
         }

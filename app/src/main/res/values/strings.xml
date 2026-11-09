@@ -23,6 +23,7 @@
     <string name="menu_subtitle">Tu menú, a un toque de distancia</string>
     <string name="menu_empty">No hay productos disponibles en este momento.</string>
     <string name="menu_add">Agregar</string>
+    <string name="menu_all">Todos</string>
     <string name="error_network">No se pudo conectar con el servidor. Revisa tu conexión a internet e inténtalo de nuevo.</string>
     <string name="error_server">El servidor respondió con un error. Inténtalo de nuevo más tarde.</string>
     <string name="error_unknown">Ocurrió un error inesperado al cargar el menú.</string>

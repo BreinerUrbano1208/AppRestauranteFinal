@@ -1,20 +1,34 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Tema oscuro. -->
-    <style name="Base.Theme.AppRestaurante" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">#FFB5A0</item>
-        <item name="colorOnPrimary">#5F1500</item>
-        <item name="colorPrimaryContainer">#862A12</item>
-        <item name="colorOnPrimaryContainer">#FFDBD1</item>
-        <item name="colorSecondary">#E7BDB2</item>
-        <item name="colorOnSecondary">#442A22</item>
-        <item name="colorSecondaryContainer">#5D4037</item>
-        <item name="colorOnSecondaryContainer">#FFDBD1</item>
-        <item name="colorSurface">#1A110F</item>
-        <item name="colorOnSurface">#F1DFDA</item>
-        <item name="colorSurfaceVariant">#53433F</item>
-        <item name="colorOnSurfaceVariant">#D8C2BC</item>
-        <item name="colorSurfaceContainer">#271D1B</item>
-        <item name="colorOutline">#A08C87</item>
-        <item name="colorOutlineVariant">#53433F</item>
+    <!-- Tema oscuro con acento naranja. La app siempre se ve oscura. -->
+    <style name="Base.Theme.AppRestaurante" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">#FF8A3D</item>
+        <item name="colorOnPrimary">#2B1300</item>
+        <item name="colorPrimaryContainer">#5A2B0A</item>
+        <item name="colorOnPrimaryContainer">#FFDCC4</item>
+        <item name="colorSecondary">#FFC857</item>
+        <item name="colorOnSecondary">#2B2000</item>
+        <item name="colorSecondaryContainer">#4A2C17</item>
+        <item name="colorOnSecondaryContainer">#FFB27A</item>
+        <item name="colorSurface">#121217</item>
+        <item name="colorOnSurface">#F4F1ED</item>
+        <item name="colorSurfaceVariant">#2A2A33</item>
+        <item name="colorOnSurfaceVariant">#B9B5C0</item>
+        <item name="colorSurfaceContainerLowest">#0E0E12</item>
+        <item name="colorSurfaceContainerLow">#17171E</item>
+        <item name="colorSurfaceContainer">#1C1C24</item>
+        <item name="colorSurfaceContainerHigh">#24242E</item>
+        <item name="colorSurfaceContainerHighest">#2C2C37</item>
+        <item name="colorOutline">#6F6C78</item>
+        <item name="colorOutlineVariant">#3A3A45</item>
+        <item name="colorError">#FF6B6B</item>
+        <item name="android:windowBackground">@color/window_bg</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.App.Medium</item>
     </style>
+
+    <style name="ShapeAppearance.App.Medium" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
+    </style>
+
+    <style name="Theme.AppRestaurante" parent="Base.Theme.AppRestaurante" />
 </resources>

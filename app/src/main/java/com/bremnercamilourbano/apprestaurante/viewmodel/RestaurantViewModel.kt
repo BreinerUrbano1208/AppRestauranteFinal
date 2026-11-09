@@ -62,9 +62,27 @@ class RestaurantViewModel : ViewModel() {
         _adminQuery.value = query
     }
 
-    /** Menú del cliente: solo productos disponibles que coinciden con la búsqueda. */
-    val menu: StateFlow<List<Product>> = combine(serverProducts, _menuQuery) { list, query ->
-        list.filter { it.available && it.matchesQuery(query) }
+    private val _menuCategory = MutableStateFlow<String?>(null)
+    val menuCategory: StateFlow<String?> = _menuCategory.asStateFlow()
+    fun setMenuCategory(category: String?) {
+        _menuCategory.value = category
+    }
+
+    /** Categorías de los productos disponibles, sin repetir ("platos" y "Platos" cuentan como una). */
+    val categories: StateFlow<List<String>> = serverProducts.map { list ->
+        list.filter { it.available }
+            .map { it.category.trim() }
+            .filter { it.isNotEmpty() }
+            .distinctBy { it.lowercase() }
+            .sortedBy { it.lowercase() }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Menú del cliente: solo productos disponibles, filtrados por búsqueda y categoría. */
+    val menu: StateFlow<List<Product>> = combine(serverProducts, _menuQuery, _menuCategory) { list, query, category ->
+        list.filter {
+            it.available && it.matchesQuery(query) &&
+                (category == null || it.category.trim().equals(category, ignoreCase = true))
+        }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** Catálogo del administrador (incluye no disponibles) filtrado por la búsqueda. */

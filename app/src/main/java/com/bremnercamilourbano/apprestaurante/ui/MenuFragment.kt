@@ -16,6 +16,7 @@ import com.bremnercamilourbano.apprestaurante.util.applyStatusBarPadding
 import com.bremnercamilourbano.apprestaurante.viewmodel.ErrorKind
 import com.bremnercamilourbano.apprestaurante.viewmodel.LoadState
 import com.bremnercamilourbano.apprestaurante.viewmodel.RestaurantViewModel
+import com.google.android.material.chip.Chip
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
@@ -42,6 +43,10 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    combine(viewModel.categories, viewModel.menuCategory) { cats, selected -> cats to selected }
+                        .collect { (cats, selected) -> renderChips(cats, selected) }
+                }
                 combine(viewModel.menu, viewModel.loadState) { menu, state -> menu to state }
                     .collect { (menu, state) ->
                         adapter.submitList(menu)
@@ -51,7 +56,8 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
                         binding.progress.isVisible = loading && !hasItems
                         binding.recyclerProducts.isVisible = hasItems
                         binding.layoutError.isVisible = state is LoadState.Error && !hasItems
-                        val searching = viewModel.menuQuery.value.isNotBlank()
+                        val searching = viewModel.menuQuery.value.isNotBlank() ||
+                            viewModel.menuCategory.value != null
                         binding.txtEmpty.isVisible = state is LoadState.Loaded && !hasItems && !searching
                         binding.txtNoResults.isVisible = state is LoadState.Loaded && !hasItems && searching
                         if (state is LoadState.Error) {
@@ -66,6 +72,28 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
                     }
             }
         }
+    }
+
+    private fun renderChips(categories: List<String>, selected: String?) {
+        // Si la categoría elegida ya no existe (ej. se agotó), se vuelve a "Todos".
+        if (selected != null && categories.none { it.equals(selected, ignoreCase = true) }) {
+            viewModel.setMenuCategory(null)
+            return
+        }
+        binding.scrollChips.isVisible = categories.size > 1
+        binding.chipsCategory.removeAllViews()
+        addChip(getString(R.string.menu_all), selected == null) { viewModel.setMenuCategory(null) }
+        categories.forEach { name ->
+            addChip(name, selected.equals(name, ignoreCase = true)) { viewModel.setMenuCategory(name) }
+        }
+    }
+
+    private fun addChip(label: String, checked: Boolean, onClick: () -> Unit) {
+        val chip = layoutInflater.inflate(R.layout.item_chip_category, binding.chipsCategory, false) as Chip
+        chip.text = label
+        chip.isChecked = checked
+        chip.setOnClickListener { onClick() }
+        binding.chipsCategory.addView(chip)
     }
 
     override fun onDestroyView() {

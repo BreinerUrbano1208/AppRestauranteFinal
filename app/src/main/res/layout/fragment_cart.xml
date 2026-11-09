@@ -10,7 +10,7 @@
         android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
+        android:background="@drawable/bg_header"
         android:orientation="vertical"
         android:paddingStart="20dp"
         android:paddingTop="16dp"
@@ -21,7 +21,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/cart_title"
-            android:textColor="?attr/colorOnPrimary"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="26sp"
             android:textStyle="bold" />
 
@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:text="@string/cart_subtitle"
-            android:textColor="?attr/colorOnPrimary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="13sp" />
     </LinearLayout>
 
@@ -41,6 +41,7 @@
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerCart"
+            android:layoutAnimation="@anim/layout_list_enter"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
@@ -64,7 +65,7 @@
         android:id="@+id/panelCheckout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorSurfaceContainer"
+        android:background="@drawable/bg_panel_top"
         android:orientation="vertical"
         android:padding="16dp"
         android:visibility="gone">
@@ -87,6 +88,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCheckout"
+            android:stateListAnimator="@animator/press_scale"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="12dp"
