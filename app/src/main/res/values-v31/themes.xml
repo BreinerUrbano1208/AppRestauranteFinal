@@ -1,0 +1,8 @@
+<resources>
+    <!-- Android 12 o superior: pantalla de inicio del sistema con el logo. -->
+    <style name="Theme.AppRestaurante" parent="Base.Theme.AppRestaurante">
+        <item name="android:windowSplashScreenBackground">@color/window_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_logo_glyph</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">#FFD84D</item>
+    </style>
+</resources>

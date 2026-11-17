@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "321825268791",
+    "project_id": "restapp-91d1e",
+    "storage_bucket": "restapp-91d1e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:321825268791:android:4180da1003e32365dc4bb2",
+        "android_client_info": {
+          "package_name": "com.bremnercamilourbano.apprestaurante"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApB6zL3dGnb9JqiOv_KZa3RTPThITJw_c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

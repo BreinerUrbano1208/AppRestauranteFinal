@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="none">
+        <item
+            android:id="@+id/drawer_orders"
+            android:icon="@drawable/ic_receipt"
+            android:title="@string/drawer_orders" />
+        <item
+            android:id="@+id/drawer_edit_profile"
+            android:icon="@drawable/ic_edit"
+            android:title="@string/drawer_edit_profile" />
+        <item
+            android:id="@+id/drawer_restaurant"
+            android:icon="@drawable/ic_info"
+            android:title="@string/drawer_restaurant" />
+        <item
+            android:id="@+id/drawer_settings"
+            android:icon="@drawable/ic_settings"
+            android:title="@string/drawer_settings" />
+    </group>
+    <item android:title="">
+        <menu>
+            <group android:checkableBehavior="none">
+                <item
+                    android:id="@+id/drawer_logout"
+                    android:icon="@drawable/ic_logout"
+                    android:title="@string/action_logout" />
+            </group>
+        </menu>
+    </item>
+</menu>
