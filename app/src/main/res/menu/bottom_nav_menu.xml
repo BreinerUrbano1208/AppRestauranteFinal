@@ -12,8 +12,4 @@
         android:id="@+id/nav_my_order"
         android:icon="@drawable/ic_receipt"
         android:title="@string/nav_my_order" />
-    <item
-        android:id="@+id/nav_staff"
-        android:icon="@drawable/ic_lock"
-        android:title="@string/nav_staff" />
 </menu>

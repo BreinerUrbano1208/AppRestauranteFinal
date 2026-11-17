@@ -4,12 +4,16 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bremnercamilourbano.apprestaurante.R
+import com.bremnercamilourbano.apprestaurante.data.ClientStore
+import com.bremnercamilourbano.apprestaurante.data.JornadaRepository
 import com.bremnercamilourbano.apprestaurante.data.OrderItemRequest
 import com.bremnercamilourbano.apprestaurante.data.OrderRepository
 import com.bremnercamilourbano.apprestaurante.data.OrderRequest
 import com.bremnercamilourbano.apprestaurante.data.ProductRepository
 import com.bremnercamilourbano.apprestaurante.data.Session
 import com.bremnercamilourbano.apprestaurante.data.SessionStore
+import com.bremnercamilourbano.apprestaurante.data.TableDto
+import com.bremnercamilourbano.apprestaurante.data.TableRepository
 import com.bremnercamilourbano.apprestaurante.model.CartItem
 import com.bremnercamilourbano.apprestaurante.model.Product
 import com.bremnercamilourbano.apprestaurante.util.matchesQuery
@@ -44,6 +48,7 @@ class RestaurantViewModel : ViewModel() {
 
     private val repository = ProductRepository()
     private val orders = OrderRepository()
+    private val tableRepo = TableRepository()
     private val serverProducts = MutableStateFlow<List<Product>>(emptyList())
     private var loadJob: Job? = null
 
@@ -129,6 +134,16 @@ class RestaurantViewModel : ViewModel() {
         }
     }
 
+    // ---------- Mesas que el cliente puede elegir ----------
+    private val _tables = MutableStateFlow<List<TableDto>>(emptyList())
+    val tables: StateFlow<List<TableDto>> = _tables.asStateFlow()
+
+    fun loadTables() {
+        viewModelScope.launch {
+            tableRepo.getTables().onSuccess { _tables.value = it }
+        }
+    }
+
     // ---------- Carrito ----------
     private val cart = MutableStateFlow<Map<Int, Int>>(emptyMap())
 
@@ -185,9 +200,33 @@ class RestaurantViewModel : ViewModel() {
     private val _orderPlaced = MutableSharedFlow<Int>(extraBufferCapacity = 1)
     val orderPlaced: SharedFlow<Int> = _orderPlaced.asSharedFlow()
 
-    fun submitOrder(customerName: String, phone: String, type: String, tableNumber: Int?, note: String) {
+    // ---------- ¿El restaurante está abierto? (jornada) ----------
+    private val _jornadaOpen = MutableStateFlow<Boolean?>(null) // null = aún no se sabe
+    val jornadaOpen: StateFlow<Boolean?> = _jornadaOpen.asStateFlow()
+
+    fun refreshJornada() {
+        viewModelScope.launch {
+            JornadaRepository().status().onSuccess { _jornadaOpen.value = it.open }
+        }
+    }
+
+    fun submitOrder(
+        customerName: String,
+        phone: String,
+        type: String,
+        tableNumber: Int?,
+        address: String?,
+        neighborhood: String?,
+        paymentMethod: String,
+        note: String
+    ) {
         val items = cartItems.value
         if (items.isEmpty() || _orderBusy.value) return
+        val clientToken = ClientStore.session.value?.token
+        if (clientToken == null) {
+            post(R.string.msg_login_required)
+            return
+        }
         _orderBusy.value = true
         viewModelScope.launch {
             val request = OrderRequest(
@@ -195,19 +234,32 @@ class RestaurantViewModel : ViewModel() {
                 phone = phone.trim(),
                 type = type,
                 tableNumber = tableNumber,
+                address = address?.trim(),
+                neighborhood = neighborhood?.trim(),
                 note = note.trim(),
+                paymentMethod = paymentMethod,
                 items = items.map { OrderItemRequest(it.product.id, it.quantity) }
             )
-            orders.createOrder(request)
+            orders.createOrder(clientToken, request)
                 .onSuccess { order ->
                     cart.value = emptyMap()
-                    post(R.string.msg_order_sent, order.id)
+                    post(R.string.msg_order_sent)
                     _orderPlaced.tryEmit(order.id)
                 }
                 .onFailure { error ->
-                    postError(error)
+                    if (error.isUnauthorized()) {
+                        // La sesión del cliente venció: hay que entrar otra vez.
+                        ClientStore.clear()
+                        post(R.string.msg_client_session_expired)
+                    } else {
+                        postError(error)
+                    }
                     // Puede que el administrador haya cambiado el menú: se refresca en silencio.
-                    if (error is HttpException) loadProducts(silent = true)
+                    if (error is HttpException) {
+                        loadProducts(silent = true)
+                        loadTables()
+                        refreshJornada()
+                    }
                 }
             _orderBusy.value = false
         }
@@ -315,6 +367,18 @@ class RestaurantViewModel : ViewModel() {
         }
     }
 
+    fun deleteProduct(productId: Int) {
+        val token = adminToken() ?: return
+        viewModelScope.launch {
+            repository.deleteProduct(token, productId)
+                .onSuccess {
+                    post(R.string.msg_product_deleted)
+                    loadProducts(silent = true)
+                }
+                .onFailure { handleAdminFailure(it) }
+        }
+    }
+
     fun toggleAvailability(productId: Int) {
         val token = adminToken() ?: return
         val current = serverProducts.value.firstOrNull { it.id == productId } ?: return
@@ -336,6 +400,7 @@ class RestaurantViewModel : ViewModel() {
     init {
         // Al crear el ViewModel se consulta el menú a la API.
         loadProducts()
+        loadTables()
     }
 
     private fun handleAdminFailure(error: Throwable) {

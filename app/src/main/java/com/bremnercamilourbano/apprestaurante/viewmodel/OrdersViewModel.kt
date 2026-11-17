@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.bremnercamilourbano.apprestaurante.R
 import com.bremnercamilourbano.apprestaurante.data.OrderDto
+import com.bremnercamilourbano.apprestaurante.data.OrderLineDto
 import com.bremnercamilourbano.apprestaurante.data.OrderRepository
 import com.bremnercamilourbano.apprestaurante.data.OrderStatus
 import com.bremnercamilourbano.apprestaurante.data.SessionStore
@@ -28,12 +29,16 @@ data class MyOrder(
     val id: Int,
     val status: String? = null,
     val cancelReason: String? = null,
-    val offline: Boolean = false
+    val offline: Boolean = false,
+    val type: String? = null,
+    val tableNumber: Int? = null,
+    val total: Double = 0.0,
+    val items: List<OrderLineDto> = emptyList()
 )
 
 data class HistoryFilter(
     val query: String = "",
-    val status: String? = null, // null = finalizados y cancelados
+    val status: String? = null, // null = entregados y cancelados
     val from: String? = null,   // AAAA-MM-DD
     val to: String? = null
 )
@@ -85,7 +90,17 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
         val current = _myOrder.value ?: return
         if (current.status?.let { it in OrderStatus.TERMINADOS } == true) return
         repository.getOrderStatus(current.id)
-            .onSuccess { s -> _myOrder.value = MyOrder(s.id, s.status, s.cancelReason) }
+            .onSuccess { s ->
+                _myOrder.value = MyOrder(
+                    id = s.id,
+                    status = s.status,
+                    cancelReason = s.cancelReason,
+                    type = s.type,
+                    tableNumber = s.tableNumber,
+                    total = s.total,
+                    items = s.items.orEmpty()
+                )
+            }
             .onFailure { e ->
                 if (e is HttpException && e.code() == 404) clearMyOrder()
                 else _myOrder.value = current.copy(offline = true)
@@ -105,6 +120,8 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
 
     fun setStatusFilter(status: String?) {
         _statusFilter.value = status
+        _active.value = emptyList()
+        viewModelScope.launch { refreshActive() }
     }
 
     fun setTableFilter(table: Int?) {
@@ -119,7 +136,14 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
 
     suspend fun refreshActive() {
         val token = SessionStore.session.value?.token ?: return
-        repository.getActiveOrders(token)
+        // "Entregados" y "Cancelados" (solo cajero) se piden por estado; el resto son los pedidos activos.
+        val filter = _statusFilter.value
+        val request = if (filter != null && filter in OrderStatus.TERMINADOS) {
+            repository.getOrdersByStatus(token, filter)
+        } else {
+            repository.getActiveOrders(token)
+        }
+        request
             .onSuccess { list ->
                 _active.value = list
                 _activeState.value = LoadState.Loaded
@@ -135,10 +159,12 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
 
     private val inFlight = mutableSetOf<Int>()
 
-    /** RECIBIDO -> EN_PREPARACION -> FINALIZADO */
+    /** RECIBIDO -> EN_PREPARACION -> LISTO (cocina) -> ENTREGADO (cajero). */
     fun advance(order: OrderDto) {
         val next = OrderStatus.next(order.status) ?: return
-        val token = SessionStore.session.value?.token ?: return
+        val session = SessionStore.session.value ?: return
+        if (next == OrderStatus.ENTREGADO && !session.canManage) return
+        val token = session.token
         if (!inFlight.add(order.id)) return
         viewModelScope.launch {
             try {
@@ -150,9 +176,9 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    /** Solo administrador. El servidor rechaza cancelar un pedido ya finalizado. */
+    /** Cajero o administrador. El servidor rechaza cancelar un pedido ya entregado. */
     fun cancel(order: OrderDto, reason: String) {
-        val token = SessionStore.session.value?.token ?: return
+        val token = SessionStore.session.value?.takeIf { it.canManage }?.token ?: return
         if (!inFlight.add(order.id)) return
         viewModelScope.launch {
             try {
@@ -160,6 +186,39 @@ class OrdersViewModel(application: Application) : AndroidViewModel(application) 
                     .onSuccess { post(R.string.msg_order_cancelled, order.id) }
                     .onFailure { handleFailure(it) }
                 refreshActive()
+            } finally {
+                inFlight.remove(order.id)
+            }
+        }
+    }
+
+    /** Cajero o administrador: mueve un pedido activo a otra mesa registrada. */
+    fun changeTable(order: OrderDto, tableNumber: Int) {
+        val token = SessionStore.session.value?.takeIf { it.canManage }?.token ?: return
+        if (!inFlight.add(order.id)) return
+        viewModelScope.launch {
+            try {
+                repository.changeTable(token, order.id, tableNumber)
+                    .onSuccess { post(R.string.msg_table_changed, order.id, tableNumber) }
+                    .onFailure { handleFailure(it) }
+                refreshActive()
+            } finally {
+                inFlight.remove(order.id)
+            }
+        }
+    }
+
+    /** Cajero o administrador: corrige el método de pago registrado en un pedido. */
+    fun changePayment(order: OrderDto, method: String) {
+        val token = SessionStore.session.value?.takeIf { it.canManage }?.token ?: return
+        if (!inFlight.add(order.id)) return
+        viewModelScope.launch {
+            try {
+                repository.changePayment(token, order.id, method)
+                    .onSuccess { post(R.string.msg_payment_changed) }
+                    .onFailure { handleFailure(it) }
+                refreshActive()
+                if (SessionStore.session.value?.isAdmin == true) loadHistory()
             } finally {
                 inFlight.remove(order.id)
             }

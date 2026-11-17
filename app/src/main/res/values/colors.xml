@@ -2,10 +2,20 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="image_placeholder">#FF2A2A33</color>
-    <color name="window_bg">#FF121217</color>
+    <color name="image_placeholder">#FFE9E7E0</color>
+    <color name="window_bg">#FFF2F1ED</color>
+    <color name="brand_orange">#FFFFD84D</color>
+    <color name="brand_amber">#FFFFB35C</color>
+    <color name="brand_red">#FFFF5E3A</color>
+    <color name="glass">#1AFFFFFF</color>
+    <color name="scrim_dark">#99000000</color>
+    <color name="wait_ok">#FF3FA34D</color>
+    <color name="wait_warn">#FFE08A00</color>
+    <color name="wait_late">#FFE5484D</color>
     <color name="status_recibido">#FFE08A00</color>
     <color name="status_en_preparacion">#FF4A8FE7</color>
     <color name="status_finalizado">#FF3FA34D</color>
+    <color name="status_listo">#FF8E6CEF</color>
     <color name="status_cancelado">#FFE5484D</color>
+    <color name="table_inactive">#FF6F6C78</color>
 </resources>

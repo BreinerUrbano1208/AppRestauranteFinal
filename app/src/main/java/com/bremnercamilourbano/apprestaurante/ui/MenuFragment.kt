@@ -13,6 +13,7 @@ import com.bremnercamilourbano.apprestaurante.MainActivity
 import com.bremnercamilourbano.apprestaurante.R
 import com.bremnercamilourbano.apprestaurante.databinding.FragmentMenuBinding
 import com.bremnercamilourbano.apprestaurante.util.applyStatusBarPadding
+import com.bremnercamilourbano.apprestaurante.util.staggerEnter
 import com.bremnercamilourbano.apprestaurante.viewmodel.ErrorKind
 import com.bremnercamilourbano.apprestaurante.viewmodel.LoadState
 import com.bremnercamilourbano.apprestaurante.viewmodel.RestaurantViewModel
@@ -30,6 +31,8 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentMenuBinding.bind(view)
         binding.header.applyStatusBarPadding()
+        binding.btnDrawer.setOnClickListener { (activity as? MainActivity)?.openDrawer() }
+        staggerEnter(binding.header, binding.layoutSearch, start = 0L, step = 90L)
 
         val adapter = ProductAdapter(
             onOpen = { product -> (activity as? MainActivity)?.openDetail(product.id) },

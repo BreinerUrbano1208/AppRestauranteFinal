@@ -11,13 +11,18 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.bremnercamilourbano.apprestaurante.MainActivity
 import com.bremnercamilourbano.apprestaurante.R
+import com.bremnercamilourbano.apprestaurante.data.ClientStore
 import com.bremnercamilourbano.apprestaurante.data.OrderType
+import com.bremnercamilourbano.apprestaurante.data.PaymentMethod
 import com.bremnercamilourbano.apprestaurante.databinding.DialogOrderBinding
 import com.bremnercamilourbano.apprestaurante.databinding.FragmentCartBinding
 import com.bremnercamilourbano.apprestaurante.util.applyStatusBarPadding
+import com.bremnercamilourbano.apprestaurante.util.normalizeColombianPhone
+import com.bremnercamilourbano.apprestaurante.util.paymentLabel
 import com.bremnercamilourbano.apprestaurante.util.toPrice
 import com.bremnercamilourbano.apprestaurante.viewmodel.OrdersViewModel
 import com.bremnercamilourbano.apprestaurante.viewmodel.RestaurantViewModel
+import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -33,13 +38,17 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentCartBinding.bind(view)
         binding.header.applyStatusBarPadding()
+        binding.btnDrawer.setOnClickListener { (activity as? com.bremnercamilourbano.apprestaurante.MainActivity)?.openDrawer() }
 
         val adapter = CartAdapter(
             onChangeQuantity = { id, delta -> viewModel.changeQuantity(id, delta) },
             onRemove = { id -> viewModel.removeFromCart(id) }
         )
         binding.recyclerCart.adapter = adapter
-        binding.btnCheckout.setOnClickListener { showOrderForm() }
+        viewModel.refreshJornada()
+        binding.btnCheckout.setOnClickListener {
+            if (ClientStore.session.value == null) askLogin() else showOrderForm()
+        }
         binding.btnClear.setOnClickListener { viewModel.clearCart() }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -50,7 +59,13 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
                         (activity as? MainActivity)?.goToMyOrder()
                     }
                 }
-                launch { viewModel.orderBusy.collect { binding.btnCheckout.isEnabled = !it } }
+                launch {
+                    combine(viewModel.orderBusy, viewModel.jornadaOpen) { busy, open -> busy to open }
+                        .collect { (busy, open) ->
+                            binding.btnCheckout.isEnabled = !busy && open != false
+                            binding.txtClosed.isVisible = open == false
+                        }
+                }
                 launch {
                     combine(viewModel.cartItems, viewModel.cartTotal) { items, total -> items to total }
                         .collect { (items, total) ->
@@ -66,6 +81,16 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
         }
     }
 
+    /** Para pedir hay que tener cuenta: se lleva al cliente a Perfil. */
+    private fun askLogin() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.cart_login_title)
+            .setMessage(R.string.cart_login_message)
+            .setNegativeButton(R.string.order_back, null)
+            .setPositiveButton(R.string.cart_login_go) { _, _ -> (activity as? MainActivity)?.goToProfile() }
+            .show()
+    }
+
     private fun showOrderForm() {
         val items = viewModel.cartItems.value
         if (items.isEmpty()) return
@@ -74,12 +99,29 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
         }
         val form = DialogOrderBinding.inflate(layoutInflater)
         form.txtSummary.text = getString(R.string.order_summary, lines, viewModel.cartTotal.value.toPrice())
-
-        fun updateTableVisibility() {
-            form.layoutTable.isVisible = form.radioMesa.isChecked
+        // Nombre y celular vienen de la cuenta; se pueden cambiar para este pedido.
+        ClientStore.session.value?.let {
+            form.inputName.setText(it.name)
+            form.inputPhone.setText(it.phone)
         }
-        form.radioType.setOnCheckedChangeListener { _, _ -> updateTableVisibility() }
-        updateTableVisibility()
+
+        // Método de pago: solo se registra, no se cobra desde la app.
+        PaymentMethod.ALL.forEachIndexed { index, method ->
+            val chip = layoutInflater.inflate(R.layout.item_chip_category, form.chipsPayment, false) as Chip
+            chip.id = View.generateViewId()
+            chip.tag = method
+            chip.text = getString(paymentLabel(method))
+            form.chipsPayment.addView(chip)
+            if (index == 0) form.chipsPayment.check(chip.id)
+        }
+
+        // Dirección y barrio solo si es a domicilio. Recoger no pide nada más.
+        fun updateTypeFields() {
+            form.layoutAddress.isVisible = form.radioDomicilio.isChecked
+            form.layoutNeighborhood.isVisible = form.radioDomicilio.isChecked
+        }
+        form.radioType.setOnCheckedChangeListener { _, _ -> updateTypeFields() }
+        updateTypeFields()
 
         val dialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.order_title)
@@ -91,24 +133,34 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val name = form.inputName.text?.toString().orEmpty().trim()
-                val phone = form.inputPhone.text?.toString().orEmpty().filter { it.isDigit() }
-                val isTable = form.radioMesa.isChecked
-                val table = form.inputTable.text?.toString().orEmpty().trim().toIntOrNull()
+                val phone = normalizeColombianPhone(form.inputPhone.text?.toString().orEmpty())
+                val isDelivery = form.radioDomicilio.isChecked
+                val address = form.inputAddress.text?.toString().orEmpty().trim()
+                val neighborhood = form.inputNeighborhood.text?.toString().orEmpty().trim()
 
                 val nameOk = name.length >= 2
-                val phoneOk = phone.length in 7..15
-                val tableOk = !isTable || (table != null && table in 1..200)
+                val phoneOk = phone != null
+                val addressOk = !isDelivery || address.length >= 5
+                val neighborhoodOk = !isDelivery || neighborhood.length >= 2
 
                 form.layoutName.error = if (nameOk) null else getString(R.string.order_error_name)
                 form.layoutPhone.error = if (phoneOk) null else getString(R.string.order_error_phone)
-                form.layoutTable.error = if (tableOk) null else getString(R.string.order_error_table)
 
-                if (nameOk && phoneOk && tableOk) {
+                form.layoutAddress.error = if (addressOk) null else getString(R.string.order_error_address)
+                form.layoutNeighborhood.error =
+                    if (neighborhoodOk) null else getString(R.string.order_error_neighborhood)
+
+                if (nameOk && phone != null && addressOk && neighborhoodOk) {
                     viewModel.submitOrder(
                         customerName = name,
                         phone = phone,
-                        type = if (isTable) OrderType.MESA else OrderType.RECOGER,
-                        tableNumber = if (isTable) table else null,
+                        type = if (isDelivery) OrderType.DOMICILIO else OrderType.RECOGER,
+                        tableNumber = null,
+                        address = if (isDelivery) address else null,
+                        neighborhood = if (isDelivery) neighborhood else null,
+                        paymentMethod = form.chipsPayment
+                            .findViewById<Chip>(form.chipsPayment.checkedChipId)?.tag as? String
+                            ?: PaymentMethod.EFECTIVO,
                         note = form.inputNote.text?.toString().orEmpty()
                     )
                     dialog.dismiss()

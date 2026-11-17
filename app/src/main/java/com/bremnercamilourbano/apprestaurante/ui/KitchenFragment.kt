@@ -15,10 +15,12 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.bremnercamilourbano.apprestaurante.R
 import com.bremnercamilourbano.apprestaurante.data.OrderDto
 import com.bremnercamilourbano.apprestaurante.data.OrderStatus
+import com.bremnercamilourbano.apprestaurante.data.OrderType
 import com.bremnercamilourbano.apprestaurante.data.SessionStore
 import com.bremnercamilourbano.apprestaurante.databinding.FragmentKitchenBinding
 import com.bremnercamilourbano.apprestaurante.viewmodel.LoadState
 import com.bremnercamilourbano.apprestaurante.viewmodel.OrdersViewModel
+import com.bremnercamilourbano.apprestaurante.viewmodel.RestaurantViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -28,6 +30,7 @@ import kotlinx.coroutines.launch
 class KitchenFragment : Fragment(R.layout.fragment_kitchen) {
 
     private val viewModel: OrdersViewModel by activityViewModels()
+    private val restaurantViewModel: RestaurantViewModel by activityViewModels()
     private var _binding: FragmentKitchenBinding? = null
     private val binding get() = _binding!!
 
@@ -38,15 +41,33 @@ class KitchenFragment : Fragment(R.layout.fragment_kitchen) {
         val adapter = OrderAdapter(
             onAdvance = { viewModel.advance(it) },
             onCancel = { askCancel(it) },
-            canCancel = { SessionStore.session.value?.isAdmin == true }
+            onChangeTable = { order ->
+                showChangeTableDialog(order, restaurantViewModel.tables.value) { viewModel.changeTable(order, it) }
+            },
+            onChangePayment = { order ->
+                showChangePaymentDialog(order) { viewModel.changePayment(order, it) }
+            },
+            canCancel = { SessionStore.session.value?.canManage == true },
+            canAdvance = { order ->
+                // Cocina prepara; solo cajero/administrador marcan "entregado".
+                OrderStatus.next(order.status) != OrderStatus.ENTREGADO ||
+                    (SessionStore.session.value?.canManage == true && order.type != OrderType.MESA)
+            }
         )
+        val manager = SessionStore.session.value?.canManage == true
+        binding.chipDelivered.isVisible = manager
+        binding.chipCancelledOrders.isVisible = manager
         binding.recyclerOrders.adapter = adapter
+        restaurantViewModel.loadTables() // para el diálogo "Cambiar mesa"
 
         // Estado de los filtros guardado en el ViewModel (sobrevive a girar la pantalla).
         binding.chipsStatus.check(
             when (viewModel.statusFilter.value) {
                 OrderStatus.RECIBIDO -> R.id.chipReceived
                 OrderStatus.EN_PREPARACION -> R.id.chipPreparing
+                OrderStatus.LISTO -> R.id.chipReady
+                OrderStatus.ENTREGADO -> R.id.chipDelivered
+                OrderStatus.CANCELADO -> R.id.chipCancelledOrders
                 else -> R.id.chipActive
             }
         )
@@ -55,6 +76,9 @@ class KitchenFragment : Fragment(R.layout.fragment_kitchen) {
                 when (checkedIds.firstOrNull()) {
                     R.id.chipReceived -> OrderStatus.RECIBIDO
                     R.id.chipPreparing -> OrderStatus.EN_PREPARACION
+                    R.id.chipReady -> OrderStatus.LISTO
+                    R.id.chipDelivered -> OrderStatus.ENTREGADO
+                    R.id.chipCancelledOrders -> OrderStatus.CANCELADO
                     else -> null
                 }
             )

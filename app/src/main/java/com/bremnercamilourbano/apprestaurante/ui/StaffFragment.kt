@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Sección del personal. Sin sesión muestra el acceso por clave.
- * Con sesión: cocina ve "Pedidos"; administrador ve "Pedidos", "Productos" e "Historial".
+ * Con sesión, las pestañas dependen del rol (cocina, cajero o administrador).
  */
 class StaffFragment : Fragment(R.layout.fragment_staff) {
 
@@ -77,17 +77,35 @@ class StaffFragment : Fragment(R.layout.fragment_staff) {
         }
 
         binding.txtRole.setText(
-            if (session.isAdmin) R.string.staff_subtitle_admin else R.string.staff_subtitle_cocina
+            when {
+                session.isAdmin -> R.string.staff_subtitle_admin
+                session.isCajero -> R.string.staff_subtitle_cajero
+                else -> R.string.staff_subtitle_cocina
+            }
         )
-        setupTabs(session.isAdmin)
+        setupTabs(session)
     }
 
-    private fun setupTabs(isAdmin: Boolean) {
+    /**
+     * Cocina: Pedidos. Cajero: Jornada (abrir/cerrar caja), Mesas (cuentas y facturar) y Pedidos.
+     * Administrador: Jornadas (historial), Productos, Historial y Mesas (crear/editar).
+     */
+    private fun setupTabs(session: Session) {
         val tabs = buildList {
-            add(TAG_ORDERS to R.string.staff_tab_orders)
-            if (isAdmin) {
-                add(TAG_PRODUCTS to R.string.staff_tab_products)
-                add(TAG_HISTORY to R.string.staff_tab_history)
+            when {
+                session.isAdmin -> {
+                    add(TAG_JORNADA to R.string.staff_tab_jornadas)
+                    add(TAG_PRODUCTS to R.string.staff_tab_products)
+                    add(TAG_HISTORY to R.string.staff_tab_history)
+                    add(TAG_TABLES to R.string.staff_tab_tables)
+                    add(TAG_USERS to R.string.staff_tab_users)
+                }
+                session.isCajero -> {
+                    add(TAG_JORNADA to R.string.staff_tab_jornada)
+                    add(TAG_TABLES to R.string.staff_tab_tables)
+                    add(TAG_ORDERS to R.string.staff_tab_orders)
+                }
+                else -> add(TAG_ORDERS to R.string.staff_tab_orders)
             }
         }
         // Si ya hay una pestaña abierta (por ejemplo al girar la pantalla) se conserva.
@@ -115,6 +133,9 @@ class StaffFragment : Fragment(R.layout.fragment_staff) {
     private fun showChild(tag: String) {
         if (childFragmentManager.findFragmentById(R.id.staffContainer)?.tag == tag) return
         val fragment: Fragment = when (tag) {
+            TAG_TABLES -> TablesFragment()
+            TAG_JORNADA -> JornadaFragment()
+            TAG_USERS -> StaffUsersFragment()
             TAG_PRODUCTS -> AdminProductsFragment()
             TAG_HISTORY -> HistoryFragment()
             else -> KitchenFragment()
@@ -132,6 +153,9 @@ class StaffFragment : Fragment(R.layout.fragment_staff) {
 
     private companion object {
         const val TAG_ORDERS = "orders"
+        const val TAG_TABLES = "tables"
+        const val TAG_JORNADA = "jornada"
+        const val TAG_USERS = "users"
         const val TAG_PRODUCTS = "products"
         const val TAG_HISTORY = "history"
     }

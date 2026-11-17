@@ -18,6 +18,17 @@ private fun HttpException.serverMessage(): String? = try {
     null
 }
 
+/** 403 con "needsVerification": el correo falta por verificar. Lee el cuerpo UNA vez (no se puede leer dos veces). */
+fun Throwable.verificationEmailOrNull(): String? {
+    if (this !is HttpException || code() != 403) return null
+    return try {
+        val body = JsonParser.parseString(response()?.errorBody()?.string().orEmpty()).asJsonObject
+        if (body.get("needsVerification")?.asBoolean == true) body.get("email")?.asString.orEmpty() else null
+    } catch (e: Exception) {
+        null
+    }
+}
+
 fun Throwable.toErrorKind(): ErrorKind = when (this) {
     is IOException -> ErrorKind.NETWORK
     is HttpException -> ErrorKind.SERVER

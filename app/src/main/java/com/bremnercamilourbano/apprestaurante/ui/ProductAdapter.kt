@@ -7,6 +7,8 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bremnercamilourbano.apprestaurante.databinding.ItemProductBinding
 import com.bremnercamilourbano.apprestaurante.model.Product
+import androidx.core.view.isVisible
+import com.bremnercamilourbano.apprestaurante.util.bounce
 import com.bremnercamilourbano.apprestaurante.util.loadImage
 import com.bremnercamilourbano.apprestaurante.util.toPrice
 
@@ -32,10 +34,14 @@ class ProductAdapter(
             binding.imgProduct.loadImage(product.imageUrl)
             binding.txtName.text = product.title
             binding.txtCategory.text = product.category
+            binding.txtCategory.isVisible = product.category.isNotBlank()
             binding.txtDescription.text = product.description
             binding.txtPrice.text = product.price.toPrice()
             binding.root.setOnClickListener { onOpen(product) }
-            binding.btnAdd.setOnClickListener { onAdd(product) }
+            binding.btnAdd.setOnClickListener {
+                it.bounce()
+                onAdd(product)
+            }
         }
     }
 }

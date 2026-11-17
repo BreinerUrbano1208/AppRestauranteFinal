@@ -54,7 +54,8 @@ class AdminProductsFragment : Fragment(R.layout.fragment_admin_products) {
 
         val adapter = AdminProductAdapter(
             onEdit = { product -> showProductForm(product) },
-            onToggleAvailable = { product -> viewModel.toggleAvailability(product.id) }
+            onToggleAvailable = { product -> viewModel.toggleAvailability(product.id) },
+            onDelete = { product -> confirmDelete(product) }
         )
         binding.recyclerAdmin.adapter = adapter
         binding.btnAddProduct.setOnClickListener { showProductForm(null) }
@@ -154,6 +155,15 @@ class AdminProductsFragment : Fragment(R.layout.fragment_admin_products) {
                 imageBytes = bytes
             )
         }
+    }
+
+    private fun confirmDelete(product: Product) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.admin_delete_title, product.title))
+            .setMessage(R.string.admin_delete_message)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.admin_delete_confirm) { _, _ -> viewModel.deleteProduct(product.id) }
+            .show()
     }
 
     private fun formatPriceInput(price: Double): String =

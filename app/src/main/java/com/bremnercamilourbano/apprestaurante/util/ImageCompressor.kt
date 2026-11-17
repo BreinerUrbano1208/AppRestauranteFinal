@@ -82,6 +82,50 @@ object ImageCompressor {
         }
     }
 
+    /**
+     * Foto de perfil: recorte cuadrado de 256 px en JPEG, como texto "data:image/jpeg;base64,...".
+     * Pesa unos 15-40 KB. Llamar fuera del hilo principal.
+     */
+    fun avatar(context: Context, uri: Uri): String? {
+        return try {
+            val resolver = context.contentResolver
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+            var sample = 1
+            while (bounds.outWidth / (sample * 2) >= 512 && bounds.outHeight / (sample * 2) >= 512) sample *= 2
+            val decoded = resolver.openInputStream(uri)?.use {
+                BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
+            } ?: return null
+            val orientation = resolver.openInputStream(uri)?.use {
+                ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+            } ?: ExifInterface.ORIENTATION_NORMAL
+            val upright = rotate(decoded, orientation)
+            val side = minOf(upright.width, upright.height)
+            val square = Bitmap.createBitmap(upright, (upright.width - side) / 2, (upright.height - side) / 2, side, side)
+            val small = Bitmap.createScaledBitmap(square, 256, 256, true)
+            val flat = Bitmap.createBitmap(256, 256, Bitmap.Config.ARGB_8888).also {
+                val canvas = Canvas(it)
+                canvas.drawColor(Color.WHITE)
+                canvas.drawBitmap(small, 0f, 0f, null)
+            }
+            var quality = 85
+            var bytes: ByteArray
+            do {
+                val stream = ByteArrayOutputStream()
+                flat.compress(Bitmap.CompressFormat.JPEG, quality, stream)
+                bytes = stream.toByteArray()
+                quality -= 10
+            } while (bytes.size > 60_000 && quality >= 30)
+            if (bytes.size > 60_000) null
+            else "data:image/jpeg;base64," + android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+        } catch (e: Exception) {
+            null
+        } catch (e: OutOfMemoryError) {
+            null
+        }
+    }
+
     private fun rotate(bitmap: Bitmap, orientation: Int): Bitmap {
         val matrix = Matrix()
         when (orientation) {

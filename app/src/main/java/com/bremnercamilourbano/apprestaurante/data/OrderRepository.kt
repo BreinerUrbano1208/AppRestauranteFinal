@@ -5,8 +5,8 @@ class OrderRepository(private val api: ProductsApi = ProductsApi.create()) {
     private fun bearer(token: String) = "Bearer $token"
 
     // ---------- Cliente ----------
-    suspend fun createOrder(request: OrderRequest): Result<OrderCreated> =
-        safeCall { api.createOrder(request) }
+    suspend fun createOrder(token: String, request: OrderRequest): Result<OrderCreated> =
+        safeCall { api.createOrder(bearer(token), request) }
 
     suspend fun getOrderStatus(id: Int): Result<OrderStatusDto> =
         safeCall { api.getOrderStatus(id) }
@@ -14,6 +14,9 @@ class OrderRepository(private val api: ProductsApi = ProductsApi.create()) {
     // ---------- Cocina y administrador ----------
     suspend fun getActiveOrders(token: String): Result<List<OrderDto>> =
         safeCall { api.getActiveOrders(bearer(token)) }
+
+    suspend fun getOrdersByStatus(token: String, status: String): Result<List<OrderDto>> =
+        safeCall { api.getOrdersByStatus(bearer(token), status) }
 
     suspend fun setStatus(token: String, id: Int, status: String): Result<OrderDto> =
         safeCall { api.setOrderStatus(bearer(token), id, StatusRequest(status)) }
@@ -30,4 +33,10 @@ class OrderRepository(private val api: ProductsApi = ProductsApi.create()) {
         to: String?
     ): Result<List<OrderDto>> =
         safeCall { api.getHistory(bearer(token), query, status, from, to) }
+
+    suspend fun changeTable(token: String, id: Int, tableNumber: Int): Result<OrderDto> =
+        safeCall { api.changeOrderTable(bearer(token), id, ChangeTableRequest(tableNumber)) }
+
+    suspend fun changePayment(token: String, id: Int, method: String): Result<OrderDto> =
+        safeCall { api.changeOrderPayment(bearer(token), id, PaymentRequest(method)) }
 }

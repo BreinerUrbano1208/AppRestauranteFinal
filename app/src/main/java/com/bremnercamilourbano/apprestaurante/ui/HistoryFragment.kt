@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.bremnercamilourbano.apprestaurante.R
 import com.bremnercamilourbano.apprestaurante.data.OrderStatus
+import com.bremnercamilourbano.apprestaurante.data.SessionStore
 import com.bremnercamilourbano.apprestaurante.databinding.FragmentHistoryBinding
 import com.bremnercamilourbano.apprestaurante.util.toApiDate
 import com.bremnercamilourbano.apprestaurante.viewmodel.LoadState
@@ -30,14 +31,20 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentHistoryBinding.bind(view)
 
-        val adapter = OrderAdapter() // sin botones: solo lectura
+        // Solo lectura, salvo que el administrador puede corregir el método de pago.
+        val adapter = OrderAdapter(
+            onChangePayment = { order ->
+                showChangePaymentDialog(order) { viewModel.changePayment(order, it) }
+            },
+            canCancel = { SessionStore.session.value?.canManage == true }
+        )
         binding.recyclerHistory.adapter = adapter
 
         val filter = viewModel.historyFilter.value
         binding.inputSearch.setText(filter.query)
         binding.chipsStatus.check(
             when (filter.status) {
-                OrderStatus.FINALIZADO -> R.id.chipDone
+                OrderStatus.ENTREGADO -> R.id.chipDone
                 OrderStatus.CANCELADO -> R.id.chipCancelled
                 else -> R.id.chipAll
             }
@@ -51,7 +58,7 @@ class HistoryFragment : Fragment(R.layout.fragment_history) {
         }
         binding.chipsStatus.setOnCheckedStateChangeListener { _, checkedIds ->
             val status = when (checkedIds.firstOrNull()) {
-                R.id.chipDone -> OrderStatus.FINALIZADO
+                R.id.chipDone -> OrderStatus.ENTREGADO
                 R.id.chipCancelled -> OrderStatus.CANCELADO
                 else -> null
             }

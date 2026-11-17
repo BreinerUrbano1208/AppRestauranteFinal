@@ -14,6 +14,7 @@ import com.bremnercamilourbano.apprestaurante.databinding.FragmentDetailBinding
 import com.bremnercamilourbano.apprestaurante.model.Product
 import com.bremnercamilourbano.apprestaurante.util.applyStatusBarPadding
 import com.bremnercamilourbano.apprestaurante.util.loadImage
+import com.bremnercamilourbano.apprestaurante.util.showImageViewer
 import com.bremnercamilourbano.apprestaurante.util.toPrice
 import com.bremnercamilourbano.apprestaurante.viewmodel.RestaurantViewModel
 import kotlinx.coroutines.launch
@@ -73,6 +74,8 @@ class DetailFragment : Fragment(R.layout.fragment_detail) {
         binding.txtLoading.isVisible = current == null
         if (current != null) {
             binding.imgProduct.loadImage(current.imageUrl)
+            // Tocar la foto la abre en grande, en su tamaño original.
+            binding.imgProduct.setOnClickListener { showImageViewer(requireContext(), current.imageUrl) }
             binding.txtName.text = current.title
             binding.txtCategory.text = getString(
                 R.string.category_status,

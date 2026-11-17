@@ -38,3 +38,16 @@ fun View.applyStatusBarPadding() {
     }
     ViewCompat.requestApplyInsets(this)
 }
+
+/** Carga la foto de perfil ("data:image/jpeg;base64,...") en círculo. Si es null, deja la imagen vacía. */
+fun ImageView.loadAvatar(photo: String?) {
+    val bytes = photo?.substringAfter("base64,", "")?.takeIf { it.isNotEmpty() }?.let {
+        try { android.util.Base64.decode(it, android.util.Base64.DEFAULT) } catch (e: IllegalArgumentException) { null }
+    }
+    if (bytes == null) {
+        Glide.with(this).clear(this)
+        setImageDrawable(null)
+    } else {
+        Glide.with(this).load(bytes).circleCrop().into(this)
+    }
+}

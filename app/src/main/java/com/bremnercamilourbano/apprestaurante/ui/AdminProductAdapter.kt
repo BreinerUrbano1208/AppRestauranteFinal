@@ -13,7 +13,8 @@ import com.bremnercamilourbano.apprestaurante.util.toPrice
 
 class AdminProductAdapter(
     private val onEdit: (Product) -> Unit,
-    private val onToggleAvailable: (Product) -> Unit
+    private val onToggleAvailable: (Product) -> Unit,
+    private val onDelete: (Product) -> Unit
 ) : ListAdapter<Product, AdminProductAdapter.ViewHolder>(ProductDiff) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
@@ -35,6 +36,7 @@ class AdminProductAdapter(
             )
             binding.txtPrice.text = product.price.toPrice()
             binding.btnEdit.setOnClickListener { onEdit(product) }
+            binding.btnDelete.setOnClickListener { onDelete(product) }
 
             binding.switchAvailable.setOnCheckedChangeListener(null)
             binding.switchAvailable.isChecked = product.available
